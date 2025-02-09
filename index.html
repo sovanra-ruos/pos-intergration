@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Product CRUD</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100">
+<div class="container mx-auto px-4 py-8">
+    <h1 class="text-3xl font-bold mb-6 text-center">Product CRUD</h1>
+
+    <!-- Create Product Form -->
+    <div class="mb-8 bg-white p-6 rounded-lg shadow">
+        <h2 class="text-xl font-semibold mb-4">Create Product</h2>
+        <form id="create-form" class="space-y-4">
+            <input type="text" id="create-name" placeholder="Name" class="w-full p-2 border rounded" required>
+            <input type="text" id="create-description" placeholder="Description" class="w-full p-2 border rounded" required>
+            <input type="number" id="create-price" placeholder="Price" class="w-full p-2 border rounded" required>
+            <input type="text" id="create-image" placeholder="Image URL" class="w-full p-2 border rounded" required>
+            <input type="text" id="create-category" placeholder="Category" class="w-full p-2 border rounded" required>
+            <button type="submit" class="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600">Create Product</button>
+        </form>
+    </div>
+
+    <!-- Update Product Form -->
+    <div class="mb-8 bg-white p-6 rounded-lg shadow">
+        <h2 class="text-xl font-semibold mb-4">Update Product</h2>
+        <form id="update-form" class="space-y-4">
+            <input type="text" id="update-id" placeholder="Product ID" class="w-full p-2 border rounded" required>
+            <input type="text" id="update-name" placeholder="New Name" class="w-full p-2 border rounded">
+            <input type="text" id="update-description" placeholder="New Description" class="w-full p-2 border rounded">
+            <input type="number" id="update-price" placeholder="New Price" class="w-full p-2 border rounded">
+            <input type="text" id="update-image" placeholder="New Image URL" class="w-full p-2 border rounded">
+            <input type="text" id="update-category" placeholder="New Category" class="w-full p-2 border rounded">
+            <button type="submit" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">Update Product</button>
+        </form>
+    </div>
+
+    <!-- Delete Product Form -->
+    <div class="mb-8 bg-white p-6 rounded-lg shadow">
+        <h2 class="text-xl font-semibold mb-4">Delete Product</h2>
+        <form id="delete-form" class="space-y-4">
+            <input type="text" id="delete-id" placeholder="Product ID" class="w-full p-2 border rounded" required>
+            <button type="submit" class="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600">Delete Product</button>
+        </form>
+    </div>
+
+    <!-- Product List -->
+    <div id="product-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <!-- Products will be inserted here -->
+    </div>
+</div>
+
+<script>
+    const API_URL = 'http://localhost:8080/';
+
+    async function fetchProducts() {
+        try {
+            const response = await fetch("http://localhost:8080/api/v1/product?page=0&size=10");
+            const data = await response.json();
+            console.log('Products fetched:', data);
+            return data.results;
+        } catch (error) {
+            console.error('Error fetching products:', error);
+            return [];
+        }
+    }
+
+    async function createProduct(product) {
+
+        console.log("this is product", product);
+
+        try {
+            const response = await fetch("http://localhost:8080/api/v1/product", {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(product),
+            });
+            const data = await response.json();
+            console.log('Product created:', data);
+            displayProducts();
+        } catch (error) {
+            console.error('Error creating product:', error);
+        }
+    }
+
+    async function updateProduct(uuid, updates) {
+        console.log("this is uuid", updates);
+        try {
+            const response = await fetch(`${API_URL}api/v1/product/${uuid}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(updates),
+            });
+            const data = await response.json();
+            console.log('Product updated:', data);
+            displayProducts();
+        } catch (error) {
+            console.error('Error updating product:', error);
+        }
+    }
+
+    async function deleteProduct(uuid) {
+        try {
+            const response = await fetch(`${API_URL}api/v1/product/${uuid}`, {
+                method: 'DELETE',
+            });
+            console.log('Product deleted');
+            displayProducts();
+        } catch (error) {
+            console.error('Error deleting product:', error);
+        }
+    }
+
+    function createProductCard(product) {
+        return `
+                <div class="bg-white rounded-lg shadow-md overflow-hidden">
+                    <img src="${product.image}" alt="${product.name}" class="w-full h-48 object-cover">
+                    <div class="p-4">
+                        <h2 class="text-xl font-semibold mb-2">${product.name}</h2>
+                        <p class="text-gray-600 mb-2">${product.description}</p>
+                        <div class="flex justify-between items-center">
+                            <span class="text-lg font-bold">$${product.price.toFixed(2)}</span>
+                        </div>
+                    </div>
+                </div>
+            `;
+    }
+
+    async function displayProducts() {
+        const products = await fetchProducts();
+        console.log("this is data of products", products);
+        const productList = document.getElementById('product-list');
+        productList.innerHTML = '';
+
+        products.forEach(product => {
+            const productCard = createProductCard(product);
+            productList.innerHTML += productCard;
+        });
+    }
+
+    // Event Listeners
+    document.getElementById('create-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const product = {
+            name: document.getElementById('create-name').value,
+            description: document.getElementById('create-description').value,
+            price: parseFloat(document.getElementById('create-price').value),
+            image: document.getElementById('create-image').value,
+            categoryName: document.getElementById('create-category').value
+        };
+        await createProduct(product);
+        e.target.reset();
+    });
+
+    document.getElementById('update-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const uuid = document.getElementById('update-id').value;
+        const updates = {};
+        if (document.getElementById('update-name').value) updates.name = document.getElementById('update-name').value;
+        if (document.getElementById('update-description').value) updates.description = document.getElementById('update-description').value;
+        if (document.getElementById('update-price').value) updates.price = parseFloat(document.getElementById('update-price').value);
+        if (document.getElementById('update-image').value) updates.image = document.getElementById('update-image').value;
+        if (document.getElementById('update-category').value) updates.categoryName = document.getElementById('update-category').value;
+        await updateProduct(uuid, updates);
+        e.target.reset();
+    });
+
+    document.getElementById('delete-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const uuid = document.getElementById('delete-id').value;
+        await deleteProduct(uuid);
+        e.target.reset();
+    });
+
+    // Initial display
+    displayProducts();
+</script>
+</body>
+</html>
